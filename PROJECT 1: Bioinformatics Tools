@@ -1,0 +1,28 @@
+######################################
+#     PROJECT 1: Bioinformatics Tools
+######################################
+
+echo "=============================="
+echo " PROJECT 1: Conda & Software "
+echo "=============================="
+
+# Activate base environment
+conda activate base
+
+# Create and activate funtools environment
+conda create -n funtools -y
+conda activate funtools
+
+# Install Figlet and print name
+conda install -c conda-forge figlet -y
+figlet "Musa"
+
+# Install tools from Bioconda
+for tool in bwa blast samtools bedtools spades bcftools fastp multiqc; do
+    echo ">>> Installing $tool ..."
+    conda install -c bioconda $tool -y
+done
+
+echo "=============================="
+echo "PROJECT COMPLETED 🎉"
+echo "=============================="
