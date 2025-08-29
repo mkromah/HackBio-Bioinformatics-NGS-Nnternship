@@ -1,11 +1,10 @@
 # HackBio-Bioinformatics-NGS-Internship
 This repository contains projects and code from my internship in Bioinformatics and NGS Data Analysis. Includes Linux &amp; Bash scripting for bioinformatics pipelines, RNA sequencing (RNA-Seq) analysis, and whole genome sequencing (WGS) workflows with hands-on beginner-friendly implementations.
-Great ✅ Here’s a **better structured README.md** with two separate sections (Project 1 & Project 2). You can copy this directly into your repo:
 ---
 
 ## 📂 Repository Structure
 
-* `project.sh` → A Bash script combining **Project 1** and **Project 2** tasks.
+* `project.sh` → A Bash script combining **Project 0** and **Project 1** tasks.
 * `README.md` → Documentation of the workflow.
 
 ---
