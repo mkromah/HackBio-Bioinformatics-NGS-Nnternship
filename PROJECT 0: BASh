@@ -1,0 +1,68 @@
+#!/bin/bash
+#           PROJECT 0: BASh
+
+# 1. Print your name
+NAME="Musa_Al_Hassan_Kromah"
+echo ">>> My name is: $Musa"
+
+# 2. Create a folder titled with your name
+mkdir -p "$Musa_file"
+
+# 3. Make another directory titled 'biocomputing' and change into it
+mkdir -p biocomputing && cd biocomputing || exit
+
+# 4. Download files (using a list for cleaner code)
+cat <<EOF > files.txt
+https://raw.githubusercontent.com/josoga2/dataset-repos/main/wildtype.fna
+https://raw.githubusercontent.com/josoga2/dataset-repos/main/wildtype.gbk
+https://raw.githubusercontent.com/josoga2/dataset-repos/main/wildtype.gbk
+EOF
+
+wget -q -i files.txt
+echo ">>> Files downloaded into biocomputing/"
+
+# 5. Move the .fna file into the name folder
+mv -f wildtype.fna ../"$Musa_file"/
+echo ">>> wildtype.fna moved into $Musa_file/"
+
+# 6. Delete duplicate .gbk file(s)
+rm -f wildtype.gbk.*
+echo ">>> Duplicate gbk file removed (if any)."
+
+# 7. Check if .fna file is mutant or wild type (tatatata vs tata)
+cd ..
+mutant_grep=$(grep -i "tatatata" "$Musa_file"/wildtype.fna)
+
+if [[ -z $mutant_grep ]]; then
+    echo ">>> This strain is WILD TYPE (no tatatata mutation)."
+else
+    echo ">>> This strain is a MUTANT (tatatata found)!"
+    echo "$mutant_grep" | tr " " "\n" > "$Musa_file"/mutant_lines.txt
+    echo ">>> Mutant lines saved to $Musa_file/mutant_lines.txt"
+fi
+
+# 8. Count the number of lines (excluding the header) in .gbk
+total_lines=$(wc -l biocomputing/wildtype.gbk | awk '{print $1}')
+seq_lines=$((total_lines - 1))
+echo ">>> The .gbk file has $seq_lines sequence lines (excluding header)."
+
+# 9. Extract sequence length from LOCUS tag
+seq_len=$(grep "LOCUS" biocomputing/wildtype.gbk | awk '{print $3}')
+echo ">>> Sequence length: $seq_len bp"
+
+# 10. Extract source organism from SOURCE tag
+source_org=$(grep "SOURCE" biocomputing/wildtype.gbk | awk '{print $2, $3}')
+echo ">>> Source organism: $source_org"
+
+# 11. List all gene names
+echo ">>> Gene names in the genome:"
+grep "/gene=" biocomputing/wildtype.gbk | sed 's/\/gene=//'
+
+# 12. Clear terminal 
+# reset
+
+# 13. List files in both folders
+echo ">>> Files in $Musa_file/:"
+ls "$Musa_file"/
+echo ">>> Files in biocomputing/:"
+ls biocomputing/
