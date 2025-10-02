@@ -1,0 +1,121 @@
+#!/bin/bash
+# Transcriptomic Profiling of Staphylococcus aureus in Acute vs Chronic Periprosthetic Joint Infection
+
+# ==============================
+# 0. Setup
+# ==============================
+mkdir -p raw_reads trimmed_reads qc_reports alignments counts results
+
+# Reference genome + annotation (example for Staphylococcus aureus NCTC 8325)
+wget -O ref_genome.fna.gz "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/013/425/GCF_000013425.1_ASM1342v1/GCF_000013425.1_ASM1342v1_genomic.fna.gz"
+wget -O ref_annotation.gtf.gz "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/013/425/GCF_000013425.1_ASM1342v1/GCF_000013425.1_ASM1342v1_genomic.gtf.gz"
+gunzip ref_genome.fna.gz ref_annotation.gtf.gz
+
+# ==============================
+# 1. Download Data (SRA)
+# ==============================
+echo "Downloading RNA-seq data..."
+for acc in SRR20959676 SRR20959677 SRR20959678 SRR20959679 SRR20959680 SRR20959681 SRR20959682 SRR20959683
+do
+   prefetch $acc
+   fasterq-dump $acc -O raw_reads/ --split-files
+done
+
+# ==============================
+# 2. Quality Control
+# ==============================
+echo "Running FastQC..."
+fastqc raw_reads/*.fastq -o qc_reports/
+multiqc qc_reports/ -o qc_reports/
+
+# ==============================
+# 3. Read Trimming (fastp)
+# ==============================
+echo "Trimming reads..."
+for R1 in raw_reads/*_1.fastq; do
+    R2="${R1/_1.fastq/_2.fastq}"
+    SAMPLE=$(basename $R1 _1.fastq)
+    fastp -i $R1 -I $R2 \
+          -o trimmed_reads/${SAMPLE}_1.fastq \
+          -O trimmed_reads/${SAMPLE}_2.fastq \
+          --html trimmed_reads/${SAMPLE}_fastp.html \
+          --json trimmed_reads/${SAMPLE}_fastp.json
+done
+
+# ==============================
+# 4. Alignment (HISAT2)
+# ==============================
+echo "Building index and aligning reads..."
+hisat2-build ref_genome.fna s_aureus_index
+
+for R1 in trimmed_reads/*_1.fastq; do
+    R2="${R1/_1.fastq/_2.fastq}"
+    SAMPLE=$(basename $R1 _1.fastq)
+    hisat2 -x s_aureus_index -1 $R1 -2 $R2 -S alignments/${SAMPLE}.sam
+    samtools sort -o alignments/${SAMPLE}.bam alignments/${SAMPLE}.sam
+    samtools index alignments/${SAMPLE}.bam
+done
+
+# ==============================
+# 5. Gene Counts (featureCounts)
+# ==============================
+echo "Counting features..."
+featureCounts -a ref_annotation.gtf -o counts/gene_counts.txt alignments/*.bam
+
+# ==============================
+# 6. Differential Expression (DESeq2 in R)
+# ==============================
+echo "Running DESeq2 analysis..."
+Rscript deg_analysis.R
+
+echo "Pipeline finished successfully!"
+echo "Results saved in 'results/' folder."
+======================================================================================================
+# Differential Gene Expression Analysis for S. aureus PJI RNA-seq
+library(DESeq2)
+library(ggplot2)
+library(pheatmap)
+
+# Load featureCounts output
+counts <- read.delim("counts/gene_counts.txt", comment.char="#")
+rownames(counts) <- counts$Geneid
+counts <- counts[,7:ncol(counts)]
+
+# Define metadata (4 chronic, 4 acute)
+meta <- data.frame(
+  condition = c(rep("chronic",4), rep("acute",4)),
+  row.names = colnames(counts)
+)
+
+# DESeq2 pipeline
+dds <- DESeqDataSetFromMatrix(countData=counts, colData=meta, design=~condition)
+dds <- DESeq(dds)
+res <- results(dds)
+res <- res[order(res$padj),]
+
+# Save results
+write.csv(as.data.frame(res), file="results/DEG_results.csv")
+
+# PCA
+vsd <- vst(dds)
+pca_plot <- plotPCA(vsd, intgroup="condition")
+ggsave("results/PCA_plot.png", pca_plot)
+
+# Volcano plot
+res$gene <- rownames(res)
+volcano <- ggplot(res, aes(x=log2FoldChange, y=-log10(padj), color=padj<0.05)) +
+  geom_point() + theme_minimal() +
+  labs(title="Volcano Plot: Acute vs Chronic PJI")
+ggsave("results/Volcano_plot.png", volcano)
+
+# Heatmap (top 50 DEGs)
+topGenes <- head(order(res$padj), 50)
+mat <- assay(vsd)[topGenes,]
+pheatmap(mat, cluster_rows=TRUE, cluster_cols=TRUE,
+         annotation_col=meta,
+         filename="results/Heatmap_top50.png")
+
+cat("DESeq2 analysis completed. Results saved in 'results/' folder.\n")
+cat("GitHub Repository: https://github.com/mkromah/HackBio-BioCoding-Intership\n")
+cat("LinkedIn Profile: https://www.linkedin.com/in/musa-kromah/\n")
+
