@@ -1,6 +1,6 @@
 # HackBio Bioinformatics & NGS Internship Projects
 
-This repository contains projects and code from my internship in Bioinformatics and Next-Generation Sequencing (NGS) Data Analysis. It demonstrates hands-on, beginner-friendly implementations for Linux & Bash scripting, RNA sequencing (RNA-Seq) analysis, and whole genome sequencing (WGS) workflows.
+I keep my HackBio bioinformatics and next-generation sequencing internship exercises here. I worked with Linux, Bash, RNA sequencing, and whole-genome sequencing workflows.
 
 ---
 
@@ -98,7 +98,7 @@ This repository contains projects and code from my internship in Bioinformatics 
 
 ## ⚙️ Project 1: Installing Bioinformatics Software
 
-All installations were performed using Conda.
+I used Conda to install the tools for these exercises.
 
 **Steps Implemented:**
 
@@ -172,7 +172,7 @@ Analyze RNA-Seq data to identify differential gene expression, virulence factors
 
 ## ▶️ Usage
 
-Clone the repository and run the scripts in order:
+To reproduce the exercises, clone the repository and run the available scripts in order:
 
 ```bash
 git clone https://github.com/mkromah/HackBio-Bioinformatics-Intership.git
@@ -186,4 +186,4 @@ bash project.sh
 
 **Musa Al Hassan Kromah**
 MSc Biotechnology | Çukurova University
-Passionate about Bioinformatics & NGS Applications
+Interests: bioinformatics and NGS analysis
